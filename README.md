@@ -6,6 +6,10 @@
 
 ---
 
+## Pipe Line
+
+![alt text](attachedPhoto/pipeline.png)
+
 ## 전체 구조
 
 ![alt text](attachedPhoto/msa.png)
