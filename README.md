@@ -8,10 +8,18 @@
 
 ## 전체 구조
 
-![alt text](image.png)
+![alt text](attachedPhoto/msa.png)
+
+---
+
+## 아키텍처
+
+![alt text](attachedPhoto/architecture.png)
 
 ---
 
 ## MVP
 
-![alt text](image-1.png)
+![alt text](attachedPhoto/mvp.png)
+
+---
