@@ -38,6 +38,8 @@ public enum ErrorCode {
     BUDGET_NOT_FOUND(HttpStatus.NOT_FOUND, "예산 정보를 찾을 수 없습니다."),
     BUDGET_DUPLICATE(HttpStatus.CONFLICT, "이미 존재하는 예산입니다."),
     BUDGET_NO_ACCESS(HttpStatus.FORBIDDEN, "해당 예산에 대한 접근 권한이 없습니다."),
+    BUDGET_INVALID_AMOUNT(HttpStatus.BAD_REQUEST, "예산 금액은 0보다 커야 합니다."),
+    BUDGET_EXPENSE_INVALID_AMOUNT(HttpStatus.BAD_REQUEST, "지출 금액은 0 이상이어야 합니다."),
 
     // Notification
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
