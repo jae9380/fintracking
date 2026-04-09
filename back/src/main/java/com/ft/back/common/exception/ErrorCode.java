@@ -9,11 +9,17 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     // Auth
-    AUTH_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
-    AUTH_EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "만료된 토큰입니다."),
+    AUTH_REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
+    AUTH_REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "만료된 토큰입니다."),
     AUTH_EMAIL_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 이메일입니다."),
     AUTH_USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
     AUTH_INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "비밀번호가 올바르지 않습니다."),
+    AUTH_PASSWORD_REQUIRED(HttpStatus.BAD_REQUEST, "비밀번호는 비어있을 수 없습니다."),
+    AUTH_EMAIL_REQUIRED(HttpStatus.BAD_REQUEST, "이메일은 비어있을 수 없습니다."),
+    AUTH_EMAIL_INVALID_FORMAT(HttpStatus.BAD_REQUEST, "올바른 이메일 형식이 아닙니다."),
+    AUTH_REFRESH_TOKEN_REQUIRED(HttpStatus.BAD_REQUEST, "토큰은 비어있을 수 없습니다."),
+    AUTH_NEW_REFRESH_TOKEN_REQUIRED(HttpStatus.BAD_REQUEST, "새 토큰은 비어있을 수 없습니다."),
+    AUTH_INVALID_EXPIRATION(HttpStatus.BAD_REQUEST, "만료 시간은 현재 시간 이후여야 합니다."),
 
     // Account
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "계좌를 찾을 수 없습니다."),
