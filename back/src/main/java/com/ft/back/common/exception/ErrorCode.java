@@ -19,6 +19,11 @@ public enum ErrorCode {
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "계좌를 찾을 수 없습니다."),
     ACCOUNT_NO_ACCESS(HttpStatus.FORBIDDEN, "해당 계좌에 대한 접근 권한이 없습니다."),
     ACCOUNT_INVALID_TYPE(HttpStatus.BAD_REQUEST, "잘못된 계좌 유형입니다."),
+    ACCOUNT_INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "잔액이 부족합니다."),
+    ACCOUNT_INVALID_AMOUNT(HttpStatus.BAD_REQUEST, "금액은 0보다 커야 합니다."),
+    ACCOUNT_INVALID_NAME(HttpStatus.BAD_REQUEST, "계좌명은 비어있을 수 없습니다."),
+    ACCOUNT_INVALID_NUMBER(HttpStatus.BAD_REQUEST, "계좌번호는 비어있을 수 없습니다."),
+    ACCOUNT_OWNER_MISMATCH(HttpStatus.FORBIDDEN, "계좌 소유자가 아닙니다."),
 
     // Transaction
     TRANSACTION_NOT_FOUND(HttpStatus.NOT_FOUND, "거래 내역을 찾을 수 없습니다."),
