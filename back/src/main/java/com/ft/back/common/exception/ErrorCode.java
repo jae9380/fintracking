@@ -29,6 +29,10 @@ public enum ErrorCode {
     TRANSACTION_NOT_FOUND(HttpStatus.NOT_FOUND, "거래 내역을 찾을 수 없습니다."),
     TRANSACTION_NO_ACCESS(HttpStatus.FORBIDDEN, "해당 거래에 대한 접근 권한이 없습니다."),
     TRANSACTION_INVALID_TYPE(HttpStatus.BAD_REQUEST, "잘못된 거래 유형입니다."),
+    TRANSACTION_INVALID_CATEGORY_NAME(HttpStatus.BAD_REQUEST, "카테고리명은 비어있을 수 없습니다."),
+    TRANSACTION_INVALID_DATE(HttpStatus.BAD_REQUEST,"거래일은 비어있을 수 없습니다."),
+    TRANSACTION_CATEGORY_REQUIRED(HttpStatus.BAD_REQUEST, "수입/지출 거래는 카테고리가 필요합니다."),
+    TRANSACTION_INVALID_AMOUNT(HttpStatus.BAD_REQUEST, "거래 금액은 0보다 커야 합니다."),
 
     // Budget
     BUDGET_NOT_FOUND(HttpStatus.NOT_FOUND, "예산 정보를 찾을 수 없습니다."),
