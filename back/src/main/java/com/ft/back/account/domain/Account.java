@@ -28,8 +28,9 @@ public class Account extends BaseEntity {
     @Column(nullable = false)
     private String accountName;
 
+    @Convert(converter = com.ft.back.account.infrastructure.encryption.AesEncryptConverter.class)
     @Column(nullable = false)
-    private String accountNumber;  // 저장 시 AES-256 암호화 (Infrastructure 레이어 책임)
+    private String accountNumber;  // Note: DB 저장 시 AES-256 자동 암복호화
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

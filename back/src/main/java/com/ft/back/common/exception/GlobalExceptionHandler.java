@@ -1,11 +1,13 @@
 package com.ft.back.common.exception;
 
 import com.ft.back.common.response.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -28,8 +30,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
+        log.error("Unexpected error", e);
         return ResponseEntity
                 .status(500)
-                .body(ApiResponse.error(500, "internal server error"));
+                .body(ApiResponse.error(500, e.getClass().getSimpleName() + ": " + e.getMessage()));
     }
 }
