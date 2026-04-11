@@ -2,9 +2,11 @@ package com.ft.back.transaction.infrastructure.persistence;
 
 import com.ft.back.transaction.application.port.TransactionRepository;
 import com.ft.back.transaction.domain.Transaction;
+import com.ft.back.transaction.domain.TransactionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,5 +39,11 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     @Override
     public void delete(Transaction transaction) {
         jpaTransactionRepository.delete(transaction);
+    }
+
+    @Override
+    public BigDecimal sumExpenseByUserIdAndCategoryIdAndYearMonth(Long userId, Long categoryId, int year, int month) {
+        return jpaTransactionRepository.sumAmountByUserIdAndCategoryIdAndTypeAndYearMonth(
+                userId, categoryId, TransactionType.EXPENSE, year, month);
     }
 }
