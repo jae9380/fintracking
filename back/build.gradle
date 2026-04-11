@@ -19,6 +19,11 @@ repositories {
 }
 
 dependencies {
+    // JWT
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+
     // JUnit 6 (Jupiter) API 및 Engine
     testImplementation 'org.junit.jupiter:junit-jupiter:6.0.0-M2' // 또는 최신 마일스톤 버전
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

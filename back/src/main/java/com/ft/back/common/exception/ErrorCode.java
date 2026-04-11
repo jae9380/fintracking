@@ -20,6 +20,7 @@ public enum ErrorCode {
     AUTH_REFRESH_TOKEN_REQUIRED(HttpStatus.BAD_REQUEST, "토큰은 비어있을 수 없습니다."),
     AUTH_NEW_REFRESH_TOKEN_REQUIRED(HttpStatus.BAD_REQUEST, "새 토큰은 비어있을 수 없습니다."),
     AUTH_INVALID_EXPIRATION(HttpStatus.BAD_REQUEST, "만료 시간은 현재 시간 이후여야 합니다."),
+    AUTH_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
 
     // Account
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "계좌를 찾을 수 없습니다."),
