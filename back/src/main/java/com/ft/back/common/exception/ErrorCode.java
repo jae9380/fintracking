@@ -50,7 +50,8 @@ public enum ErrorCode {
 
     // Notification
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
-    NOTIFICATION_NO_ACCESS(HttpStatus.FORBIDDEN, "해당 알림에 대한 접근 권한이 없습니다.");
+    NOTIFICATION_NO_ACCESS(HttpStatus.FORBIDDEN, "해당 알림에 대한 접근 권한이 없습니다."),
+    NOTIFICATION_INVALID_WEBHOOK(HttpStatus.BAD_REQUEST, "유효하지 않은 Slack 웹훅 URL입니다.");
 
     private final HttpStatus status;
     private final String message;

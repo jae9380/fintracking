@@ -12,6 +12,8 @@ import com.ft.back.budget.domain.handler.Exceeded100Handler;
 import com.ft.back.budget.domain.handler.Warning50Handler;
 import com.ft.back.budget.domain.handler.Warning80Handler;
 import com.ft.back.common.exception.CustomException;
+import com.ft.back.notification.application.NotificationService;
+import com.ft.back.notification.domain.NotificationType;
 import com.ft.back.transaction.application.port.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,7 @@ public class BudgetService {
     private final BudgetRepository budgetRepository;
     private final BudgetAlertRepository budgetAlertRepository;
     private final TransactionRepository transactionRepository;
+    private final NotificationService notificationService;
 
     // 예산 생성
     @Transactional
@@ -98,9 +101,16 @@ public class BudgetService {
         List<AlertType> newAlerts = new ArrayList<>();
         chain.handle(budget, spent, sentAlerts, newAlerts);
 
-        // 새로 발생한 알림 저장
-        newAlerts.forEach(alertType ->
-                budgetAlertRepository.save(BudgetAlert.of(budget, alertType)));
+        // 새로 발생한 알림 저장 + Observer 브로드캐스트
+        newAlerts.forEach(alertType -> {
+            budgetAlertRepository.save(BudgetAlert.of(budget, alertType));
+            notificationService.send(
+                    userId,
+                    toNotificationType(alertType),
+                    buildTitle(alertType),
+                    buildMessage(alertType, budget)
+            );
+        });
 
         return newAlerts;
     }
@@ -117,5 +127,28 @@ public class BudgetService {
     private Budget getBudget(Long budgetId) {
         return budgetRepository.findById(budgetId)
                 .orElseThrow(() -> new CustomException(BUDGET_NOT_FOUND));
+    }
+
+    private NotificationType toNotificationType(AlertType alertType) {
+        return switch (alertType) {
+            case WARNING_50, WARNING_80 -> NotificationType.BUDGET_WARNING;
+            case EXCEEDED_100 -> NotificationType.BUDGET_EXCEEDED;
+        };
+    }
+
+    private String buildTitle(AlertType alertType) {
+        return switch (alertType) {
+            case WARNING_50 -> "예산 50% 사용 경고";
+            case WARNING_80 -> "예산 80% 사용 경고";
+            case EXCEEDED_100 -> "예산 초과 알림";
+        };
+    }
+
+    private String buildMessage(AlertType alertType, Budget budget) {
+        return switch (alertType) {
+            case WARNING_50 -> String.format("[%s] 예산의 50%%를 사용했습니다.", budget.getYearMonth());
+            case WARNING_80 -> String.format("[%s] 예산의 80%%를 사용했습니다.", budget.getYearMonth());
+            case EXCEEDED_100 -> String.format("[%s] 설정한 예산을 초과했습니다.", budget.getYearMonth());
+        };
     }
 }
