@@ -33,8 +33,8 @@ public abstract class AbstractAuthHandler {
 
     protected abstract void verifyCredentials(User user, LoginCommand command);
 
-    // 공통 토큰 발급 로직
-    private LoginResult issueTokens(User user) {
+    // 공통 토큰 발급 로직 — 서브클래스(KakaoAuthHandler 등)에서도 재사용 가능하도록 protected
+    protected LoginResult issueTokens(User user) {
         String accessToken = tokenProvider.createAccessToken(user.getId());
         String rawRefreshToken = tokenProvider.createRefreshToken(user.getId());
 

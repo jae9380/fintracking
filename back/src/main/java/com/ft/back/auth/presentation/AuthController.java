@@ -4,6 +4,7 @@ import com.ft.back.auth.application.AuthService;
 import com.ft.back.auth.application.dto.LoginResult;
 import com.ft.back.auth.presentation.dto.AuthResponse;
 import com.ft.back.auth.presentation.dto.LoginRequest;
+import com.ft.back.auth.presentation.dto.OAuth2LoginRequest;
 import com.ft.back.auth.presentation.dto.SignupRequest;
 import com.ft.back.common.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -28,6 +29,12 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         LoginResult result = authService.login(request.toCommand());
+        return ApiResponse.success(AuthResponse.from(result));
+    }
+
+    @PostMapping("/oauth2/login")
+    public ApiResponse<AuthResponse> oauth2Login(@Valid @RequestBody OAuth2LoginRequest request) {
+        LoginResult result = authService.oauth2Login(request.toCommand());
         return ApiResponse.success(AuthResponse.from(result));
     }
 

@@ -2,8 +2,10 @@ package com.ft.back.auth.application;
 
 import com.ft.back.auth.application.dto.LoginCommand;
 import com.ft.back.auth.application.dto.LoginResult;
+import com.ft.back.auth.application.dto.OAuth2LoginCommand;
 import com.ft.back.auth.application.dto.SignupCommand;
 import com.ft.back.auth.application.handler.EmailAuthHandler;
+import com.ft.back.auth.application.handler.KakaoAuthHandler;
 import com.ft.back.auth.application.port.RefreshTokenRepository;
 import com.ft.back.auth.application.port.TokenProvider;
 import com.ft.back.auth.application.port.UserRepository;
@@ -25,6 +27,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenProvider tokenProvider;
     private final EmailAuthHandler emailAuthHandler;
+    private final KakaoAuthHandler kakaoAuthHandler;
     private final PasswordEncoder passwordEncoder;
 
     // 회원가입
@@ -42,6 +45,12 @@ public class AuthService {
     @Transactional
     public LoginResult login(LoginCommand command) {
         return emailAuthHandler.login(command);
+    }
+
+    // 카카오 OAuth2 로그인 (Find or Create)
+    @Transactional
+    public LoginResult oauth2Login(OAuth2LoginCommand command) {
+        return kakaoAuthHandler.loginWithOAuth2(command);
     }
 
     // Access Token 재발급

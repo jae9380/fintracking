@@ -28,9 +28,11 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST,
-                        "/api/v1/auth/signup", "/api/v1/auth/login", "/api/v1/auth/reissue"
+                        "/api/v1/auth/signup",
+                        "/api/v1/auth/login",
+                        "/api/v1/auth/reissue",
+                        "/api/v1/auth/oauth2/login"
                 ).permitAll()
-//                    .requestMatchers(HttpMethod.POST,"/api/v1/auth/Social").permitAll() // TODO: OAuth2 로그인
                 .requestMatchers("/h2-console/**").permitAll()
                 .anyRequest().authenticated()
             )

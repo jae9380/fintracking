@@ -37,3 +37,7 @@ jwt:
 
 encryption:
   aes-key: ${key.aes}
+
+kakao:
+  client-id: ${key.kakao}
+  redirect-uri: ${uri.kakao.redirect-uri}

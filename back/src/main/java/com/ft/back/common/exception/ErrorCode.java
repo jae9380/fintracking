@@ -21,6 +21,8 @@ public enum ErrorCode {
     AUTH_NEW_REFRESH_TOKEN_REQUIRED(HttpStatus.BAD_REQUEST, "새 토큰은 비어있을 수 없습니다."),
     AUTH_INVALID_EXPIRATION(HttpStatus.BAD_REQUEST, "만료 시간은 현재 시간 이후여야 합니다."),
     AUTH_INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
+    AUTH_OAUTH2_FAILED(HttpStatus.BAD_REQUEST, "Kakao OAuth2 인증에 실패했습니다."),
+    AUTH_OAUTH2_EMAIL_MISSING(HttpStatus.BAD_REQUEST, "Kakao 계정에 이메일 정보가 없습니다. 카카오 계정 설정에서 이메일 제공에 동의해 주세요."),
 
     // Account
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "계좌를 찾을 수 없습니다."),
