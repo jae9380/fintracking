@@ -5,6 +5,8 @@ import com.ft.back.notification.application.NotificationService;
 import com.ft.back.notification.presentation.dto.NotificationResponse;
 import com.ft.back.notification.presentation.dto.NotificationSettingsRequest;
 import com.ft.back.notification.presentation.dto.NotificationSettingsResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Notification", description = "알림 API")
 @RestController
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
@@ -20,6 +23,7 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
+    @Operation(summary = "알림 목록 조회 (페이지네이션)")
     @GetMapping
     public ApiResponse<Page<NotificationResponse>> findAll(
             @AuthenticationPrincipal Long userId,
@@ -33,6 +37,7 @@ public class NotificationController {
         return ApiResponse.success(responses);
     }
 
+    @Operation(summary = "알림 단건 읽음 처리")
     @PatchMapping("/{notificationId}/read")
     public ApiResponse<NotificationResponse> markAsRead(
             @AuthenticationPrincipal Long userId,
@@ -42,12 +47,14 @@ public class NotificationController {
                 NotificationResponse.from(notificationService.markAsRead(userId, notificationId)));
     }
 
+    @Operation(summary = "알림 전체 읽음 처리")
     @PatchMapping("/read-all")
     public ApiResponse<Void> markAllAsRead(@AuthenticationPrincipal Long userId) {
         notificationService.markAllAsRead(userId);
         return ApiResponse.noContent();
     }
 
+    @Operation(summary = "알림 설정 저장 (FCM / 이메일 활성화)")
     @PostMapping("/settings")
     public ApiResponse<NotificationSettingsResponse> updateSettings(
             @AuthenticationPrincipal Long userId,

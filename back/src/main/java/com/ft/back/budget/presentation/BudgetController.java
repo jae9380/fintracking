@@ -6,6 +6,8 @@ import com.ft.back.budget.presentation.dto.BudgetResponse;
 import com.ft.back.budget.presentation.dto.CreateBudgetRequest;
 import com.ft.back.budget.presentation.dto.UpdateBudgetRequest;
 import com.ft.back.common.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.YearMonth;
 import java.util.List;
 
+@Tag(name = "Budget", description = "예산 API")
 @RestController
 @RequestMapping("/api/v1/budgets")
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class BudgetController {
 
     private final BudgetService budgetService;
 
+    @Operation(summary = "예산 등록")
     @PostMapping
     public ApiResponse<BudgetResponse> create(
             @AuthenticationPrincipal Long userId,
@@ -28,6 +32,7 @@ public class BudgetController {
         return ApiResponse.created(BudgetResponse.from(budgetService.create(userId, request.toCommand())));
     }
 
+    @Operation(summary = "월별 예산 목록 조회")
     @GetMapping
     public ApiResponse<List<BudgetResponse>> findAll(
             @AuthenticationPrincipal Long userId,
@@ -40,6 +45,7 @@ public class BudgetController {
         return ApiResponse.success(responses);
     }
 
+    @Operation(summary = "예산 상세 조회")
     @GetMapping("/{budgetId}")
     public ApiResponse<BudgetResponse> findById(
             @AuthenticationPrincipal Long userId,
@@ -47,6 +53,7 @@ public class BudgetController {
         return ApiResponse.success(BudgetResponse.from(budgetService.findById(userId, budgetId)));
     }
 
+    @Operation(summary = "예산 금액 수정")
     @PutMapping("/{budgetId}")
     public ApiResponse<BudgetResponse> updateAmount(
             @AuthenticationPrincipal Long userId,
@@ -55,6 +62,7 @@ public class BudgetController {
         return ApiResponse.success(BudgetResponse.from(budgetService.updateAmount(userId, budgetId, request.amount())));
     }
 
+    @Operation(summary = "예산 삭제")
     @DeleteMapping("/{budgetId}")
     public ApiResponse<Void> delete(
             @AuthenticationPrincipal Long userId,
@@ -63,6 +71,7 @@ public class BudgetController {
         return ApiResponse.noContent();
     }
 
+    @Operation(summary = "예산 알림 체크 (Chain of Responsibility)")
     @PostMapping("/{budgetId}/alerts")
     public ApiResponse<List<AlertType>> checkAlerts(
             @AuthenticationPrincipal Long userId,

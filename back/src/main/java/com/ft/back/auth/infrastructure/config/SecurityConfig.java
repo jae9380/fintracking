@@ -34,6 +34,7 @@ public class SecurityConfig {
                         "/api/v1/auth/oauth2/login"
                 ).permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated()
             )
             .headers(headers -> headers.frameOptions(frame -> frame.disable())) // H2 콘솔용
