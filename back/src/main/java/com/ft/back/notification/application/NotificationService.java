@@ -4,8 +4,10 @@ import com.ft.back.common.exception.CustomException;
 import com.ft.back.notification.application.dto.NotificationResult;
 import com.ft.back.notification.application.dto.NotificationSettingsResult;
 import com.ft.back.notification.application.port.NotificationRepository;
+import com.ft.back.notification.application.port.NotificationSettingsRepository;
 import com.ft.back.notification.domain.NotificationChannel;
 import com.ft.back.notification.domain.NotificationLog;
+import com.ft.back.notification.domain.NotificationSettings;
 import com.ft.back.notification.domain.NotificationType;
 import com.ft.back.notification.domain.sender.NotificationSender;
 import lombok.extern.slf4j.Slf4j;
@@ -26,14 +28,16 @@ import static com.ft.back.common.exception.ErrorCode.NOTIFICATION_NOT_FOUND;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
-
+    private final NotificationSettingsRepository notificationSettingsRepository;
     private final Map<NotificationChannel, NotificationSender> senderMap;
 
     public NotificationService(
             NotificationRepository notificationRepository,
+            NotificationSettingsRepository notificationSettingsRepository,
             List<NotificationSender> senders
     ) {
         this.notificationRepository = notificationRepository;
+        this.notificationSettingsRepository = notificationSettingsRepository;
         this.senderMap = senders.stream()
                 .collect(Collectors.toMap(NotificationSender::channel, Function.identity()));
     }
@@ -80,14 +84,18 @@ public class NotificationService {
         });
     }
 
-    /**
-     * 채널 설정 처리.
-     * 현재는 설정값을 응답으로 반환한다.
-     * 실제 서비스에서는 user_notification_settings 테이블에 영속화한다.
-     */
+    @Transactional
     public NotificationSettingsResult updateSettings(Long userId, boolean fcmEnabled, boolean emailEnabled) {
-        log.info("[Notification] 설정 변경 — userId={}, fcm={}, email={}", userId, fcmEnabled, emailEnabled);
-        return NotificationSettingsResult.of(userId, fcmEnabled, emailEnabled);
+        NotificationSettings settings = notificationSettingsRepository.findByUserId(userId)
+                .map(existing -> {
+                    existing.update(fcmEnabled, emailEnabled);
+                    return existing;
+                })
+                .orElse(NotificationSettings.create(userId, fcmEnabled, emailEnabled));
+
+        NotificationSettings saved = notificationSettingsRepository.save(settings);
+        log.info("[Notification] 설정 저장 — userId={}, fcm={}, email={}", userId, fcmEnabled, emailEnabled);
+        return NotificationSettingsResult.of(saved.getUserId(), saved.isFcmEnabled(), saved.isEmailEnabled());
     }
 
     private NotificationLog getNotificationLog(Long notificationId) {

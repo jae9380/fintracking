@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public record TransactionResponse(
         Long id,
         Long accountId,
+        Long toAccountId,
         Long categoryId,
         TransactionType type,
         BigDecimal amount,
@@ -21,6 +22,7 @@ public record TransactionResponse(
         return new TransactionResponse(
                 result.id(),
                 result.accountId(),
+                result.toAccountId(),
                 result.categoryId(),
                 result.type(),
                 result.amount(),

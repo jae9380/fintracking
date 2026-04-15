@@ -28,6 +28,8 @@ public class Transaction extends BaseEntity {
     @Column(nullable = false)
     private Long accountId;
 
+    private Long toAccountId;  // TRANSFER 전용
+
     private Long categoryId;  // TRANSFER는 null 허용
 
     @Enumerated(EnumType.STRING)
@@ -42,11 +44,12 @@ public class Transaction extends BaseEntity {
     @Column(nullable = false)
     private LocalDate transactionDate;
 
-    private Transaction(Long userId, Long accountId, Long categoryId,
+    private Transaction(Long userId, Long accountId, Long toAccountId, Long categoryId,
                         TransactionType type, BigDecimal amount,
                         String description, LocalDate transactionDate) {
         this.userId = userId;
         this.accountId = accountId;
+        this.toAccountId = toAccountId;
         this.categoryId = categoryId;
         this.type = type;
         this.amount = amount;
@@ -54,12 +57,12 @@ public class Transaction extends BaseEntity {
         this.transactionDate = transactionDate;
     }
 
-    public static Transaction create(Long userId, Long accountId, Long categoryId,
+    public static Transaction create(Long userId, Long accountId, Long toAccountId, Long categoryId,
                                      TransactionType type, BigDecimal amount,
                                      String description, LocalDate transactionDate) {
         validateAmount(amount);
         validateCategory(type, categoryId);
-        return new Transaction(userId, accountId, categoryId, type, amount, description, transactionDate);
+        return new Transaction(userId, accountId, toAccountId, categoryId, type, amount, description, transactionDate);
     }
 
     // 소유자 검증

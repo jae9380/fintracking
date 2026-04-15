@@ -4,6 +4,7 @@ import com.ft.back.common.response.ApiResponse;
 import com.ft.back.transaction.application.TransactionService;
 import com.ft.back.transaction.presentation.dto.CreateTransactionRequest;
 import com.ft.back.transaction.presentation.dto.TransactionResponse;
+import com.ft.back.transaction.presentation.dto.UpdateTransactionRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -41,6 +42,15 @@ public class TransactionController {
             @AuthenticationPrincipal Long userId,
             @PathVariable Long transactionId) {
         return ApiResponse.success(TransactionResponse.from(transactionService.findById(userId, transactionId)));
+    }
+
+    @PatchMapping("/{transactionId}")
+    public ApiResponse<TransactionResponse> update(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long transactionId,
+            @Valid @RequestBody UpdateTransactionRequest request) {
+        return ApiResponse.success(
+                TransactionResponse.from(transactionService.update(userId, transactionId, request.toCommand())));
     }
 
     @DeleteMapping("/{transactionId}")
