@@ -1,1 +1,43 @@
-spring.application.name=back
+spring:
+  application:
+    name: fintracker
+
+  config:
+    import: optional:classpath:application-secret.yml
+
+  datasource:
+    url: jdbc:h2:mem:fintracker;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  batch:
+    job:
+      enabled: false
+    jdbc:
+      initialize-schema: always
+
+jwt:
+  secret: ${key.jwt}
+  access-expiration: 3600000      # 1시간 (ms)
+  refresh-expiration: 604800000   # 7일 (ms)
+
+encryption:
+  aes-key: ${key.aes}
+
+kakao:
+  client-id: ${key.kakao}
+  redirect-uri: ${uri.kakao.redirect-uri}
