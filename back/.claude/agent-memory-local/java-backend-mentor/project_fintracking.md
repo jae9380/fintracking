@@ -27,6 +27,7 @@ type: project
 - transaction: DDD + Event
 - budget: Chain of Responsibility
 - notification: Observer (Kafka)
+- batch: Decorator + Spring Batch 5.x 청크 처리 (JobLauncher 기반)
 
 ## 주요 공통 컴포넌트
 - `CustomException` + `ErrorCode` (HttpStatus + 한글 메시지)
@@ -37,6 +38,12 @@ type: project
 - Auth: 이메일 로그인, JWT 발급, Refresh Token Rotation, 카카오 OAuth2
 - Account, Transaction, Budget: 기본 CRUD
 - Notification: 기본 구조
+- Batch: MonthlyStatistics 집계 — Spring Batch 5.x 청크(chunk=10) 처리
+  - Job: monthlyStatisticsJob / Step: monthlyStatisticsStep
+  - UserItemReader (JpaPagingItemReader), MonthlyStatisticsProcessor, MonthlyStatisticsWriter
+  - Decorator 체인: LoggingBatchDecorator → NotificationBatchDecorator → RetryBatchDecorator → JobLauncherBatchExecutor
+  - YearMonth는 JobParameter 문자열 "yyyy-MM" 형식으로 전달
+  - spring.batch.job.enabled=false (스케줄러가 직접 트리거)
 
 ## 설정 파일
 - application.yml: 공개 설정

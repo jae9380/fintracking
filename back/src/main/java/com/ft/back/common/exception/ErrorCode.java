@@ -53,7 +53,11 @@ public enum ErrorCode {
     // Notification
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
     NOTIFICATION_NO_ACCESS(HttpStatus.FORBIDDEN, "해당 알림에 대한 접근 권한이 없습니다."),
-    NOTIFICATION_INVALID_WEBHOOK(HttpStatus.BAD_REQUEST, "유효하지 않은 Slack 웹훅 URL입니다.");
+    NOTIFICATION_INVALID_WEBHOOK(HttpStatus.BAD_REQUEST, "유효하지 않은 Slack 웹훅 URL입니다."),
+
+    // Batch
+    BATCH_MAX_RETRY_EXCEEDED(HttpStatus.INTERNAL_SERVER_ERROR, "배치 작업 최대 재시도 횟수를 초과했습니다."),
+    BATCH_JOB_EXECUTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "배치 Job 실행에 실패했습니다.");
 
     private final HttpStatus status;
     private final String message;
