@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+
+  # ─────────────────────────────────────────────
+  # PostgreSQL — 서비스별 독립 DB (단일 인스턴스)
+  # ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: fintracking-postgres
+    environment:
+      POSTGRES_USER: ft
+      POSTGRES_PASSWORD: CHANGE_ME      # application-secret.yml 의 복호화된 값으로 변경
+    volumes:
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - ftNetwork
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ft" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Zookeeper — Kafka 코디네이터
+  # ─────────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: fintracking-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - ftNetwork
+    healthcheck:
+      test: [ "CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Kafka — 서비스 간 이벤트 버스
+  # application.yml: bootstrap-servers: localhost:9092
+  # ─────────────────────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: fintracking-kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # 호스트에서 실행되는 Spring Boot 앱이 localhost:9092 로 접속
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_LOG_RETENTION_HOURS: 24
+    ports:
+      - "9092:9092"
+    networks:
+      - ftNetwork
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # RabbitMQ — Spring Cloud Bus (설정 갱신 전파)
+  # application-secret.yml: rabbitmq.username=guest / password=guest
+  # Management UI: http://localhost:15672
+  # ─────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: fintracking-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI
+    networks:
+      - ftNetwork
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Zipkin — 분산 추적
+  # application.yml: zipkin.tracing.endpoint: http://localhost:9411/api/v2/spans
+  # UI: http://localhost:9411
+  # ─────────────────────────────────────────────
+  zipkin:
+    image: openzipkin/zipkin:3
+    container_name: fintracking-zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - ftNetwork
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:9411/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  ftNetwork:
+    driver: bridge
+
+volumes:
+  postgres_data:

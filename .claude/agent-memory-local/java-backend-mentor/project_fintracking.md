@@ -13,7 +13,7 @@ type: project
 
 ## 기술 스택
 
-- Spring Boot 3.x, Java 17+
+- Spring Boot 3.3.x (실제 build.gradle에는 3.5.13이 작성되어 있으나 폴리레포 전환 목표 버전은 3.3.x), Java 21
 - Spring Security (JWT 기반, @AuthenticationPrincipal Long userId)
 - JPA/Hibernate, Spring Data JPA
 - Lombok (record DTO 선호, @Setter 금지)
@@ -39,6 +39,15 @@ DDD 레이어: domain -> application -> infrastructure -> presentation
 - DTO: application 레이어는 record Result, presentation 레이어는 record Response/Request
 - 도메인 객체: `@NoArgsConstructor(access = PROTECTED)` + `static 팩토리 메서드`
 - 소유자 검증: 도메인 엔티티의 `validateOwner(userId)` 메서드
+
+## 폴리레포 전환 계획 (2026-04-16 요청)
+
+- 목표: 각 서비스를 별도 GitHub 레포지터리로 분리
+- fintracker-common은 GitHub Packages에 publish (maven-publish)
+- Spring Cloud 2023.0.x (Boot 3.3.x 호환)
+- fintracker-batch: starter-web 제거 (웹 서버 없이 배치만 실행)
+- fintracker-common: spring-web만 사용 (starter-web 아님)
+- 서비스 포트: auth=8081, account=8082, transaction=8083, budget=8084, notification=8085, batch=8086
 
 ## 구현 완료 모듈
 
