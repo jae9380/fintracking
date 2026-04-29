@@ -8,9 +8,10 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: fintracking-postgres
+    env_file:
+      - .env.secret
     environment:
-      POSTGRES_USER: ft
-      POSTGRES_PASSWORD: CHANGE_ME      # application-secret.yml 의 복호화된 값으로 변경
+      POSTGRES_USER: ${POSTGRES_USER}
     volumes:
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres_data:/var/lib/postgresql/data
@@ -80,9 +81,10 @@ services:
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: fintracking-rabbitmq
+    env_file:
+      - .env.secret
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
     ports:
       - "5672:5672"    # AMQP
       - "15672:15672"  # Management UI
@@ -112,9 +114,68 @@ services:
       timeout: 5s
       retries: 5
 
+  # ─────────────────────────────────────────────
+  # Prometheus — 메트릭 수집
+  # Eureka SD로 마이크로서비스 인스턴스 자동 발견
+  # UI: http://localhost:9090
+  # ─────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: fintracking-prometheus
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    networks:
+      - ftNetwork
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:9090/-/healthy || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Grafana — 메트릭 시각화
+  # Prometheus 데이터소스 자동 프로비저닝
+  # UI: http://localhost:3000  (admin / admin)
+  # ─────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: fintracking-grafana
+    env_file:
+      - .env.secret
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER}
+      GF_USERS_ALLOW_SIGN_UP: ${GF_USERS_ALLOW_SIGN_UP}
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - ftNetwork
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 networks:
   ftNetwork:
     driver: bridge
 
 volumes:
   postgres_data:
+  prometheus_data:
+  grafana_data:

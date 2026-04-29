@@ -1,0 +1,47 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+
+  # ── Prometheus 자기 자신 ────────────────────────────────────────
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: [ 'localhost:9090' ]
+
+  # ── Spring Boot 마이크로서비스 — Eureka 기반 동적 디스커버리 ──────
+  # Eureka에 등록된 모든 인스턴스를 자동으로 발견하고
+  # /actuator/prometheus 엔드포인트에서 메트릭을 수집한다.
+  - job_name: 'spring-microservices'
+    eureka_sd_configs:
+      - server: http://host.docker.internal:8761/eureka
+        refresh_interval: 15s
+    relabel_configs:
+      # 서비스가 host에서 실행되므로 hostname을 host.docker.internal로 교체
+      - source_labels: [ __meta_eureka_app_instance_port_number ]
+        regex: '(.*)'
+        replacement: 'host.docker.internal:$1'
+        target_label: __address__
+      # 메트릭 경로
+      - target_label: __metrics_path__
+        replacement: /actuator/prometheus
+      # 라벨 추가 — Grafana 필터링용
+      - source_labels: [ __meta_eureka_app_name ]
+        target_label: application
+        replacement: '$1'
+      - source_labels: [ __meta_eureka_app_instance_instance_id ]
+        target_label: instance
+
+  # ── 인프라 서비스 (Config, Discovery, Gateway) — 고정 포트 ────────
+  # Eureka에 등록되지 않거나 별도 수집이 필요한 서비스
+  - job_name: 'infra-services'
+    static_configs:
+      - targets:
+          - 'host.docker.internal:8761'   # fintracking-discovery (Eureka)
+          - 'host.docker.internal:8888'   # fintracking-config
+          - 'host.docker.internal:8000'   # fintracking-gateway
+        labels:
+          group: 'infra'
+    relabel_configs:
+      - target_label: __metrics_path__
+        replacement: /actuator/prometheus

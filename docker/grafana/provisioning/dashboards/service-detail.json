@@ -1,0 +1,657 @@
+{
+  "uid": "ft-service-detail",
+  "title": "FinTracking — 서비스 상세",
+  "tags": ["fintracking", "detail"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "15s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "application",
+        "label": "서비스",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(up{job=\"spring-microservices\"}, application)",
+        "refresh": 2,
+        "sort": 1,
+        "multi": false,
+        "includeAll": false,
+        "current": {}
+      }
+    ]
+  },
+  "panels": [
+
+    {
+      "id": 1,
+      "type": "row",
+      "title": "🔢 서비스 핵심 지표",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "서비스 상태",
+      "description": "1=UP(정상 스크래핑 중), 0=DOWN(Prometheus 접속 불가). DOWN이면 서비스 기동 여부 및 /actuator/prometheus 엔드포인트 확인.",
+      "gridPos": { "h": 4, "w": 3, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "up{job=\"spring-microservices\", application=\"$application\"}",
+          "legendFormat": "Status"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "graphMode": "none", "colorMode": "background", "textMode": "value" }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "현재 RPS",
+      "description": "초당 요청 수. 예상 트래픽보다 현저히 낮으면 상위 Gateway 라우팅 또는 서비스 자체 문제 확인.",
+      "gridPos": { "h": 4, "w": 3, "x": 3, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"$application\"}[1m]))",
+          "legendFormat": "RPS"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 50 }, { "color": "red", "value": 200 }] } }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "graphMode": "area", "colorMode": "background" }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "에러율 (5xx)",
+      "description": "이 서비스의 5xx 비율. 인프라 문제(DB/Kafka 연결), 코드 버그, 리소스 고갈 중 하나. Circuit Breaker 상태와 함께 확인.",
+      "gridPos": { "h": 4, "w": 3, "x": 6, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"$application\", status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{application=\"$application\"}[1m])) * 100",
+          "legendFormat": "Error %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] } }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "graphMode": "area", "colorMode": "background" }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "P95 응답시간",
+      "description": "상위 5% 요청의 응답시간. 부하 증가에 따라 비선형 증가 시 병목 지점(DB 커넥션·외부 API) 점검.",
+      "gridPos": { "h": 4, "w": 3, "x": 9, "y": 1 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"$application\"}[1m])) by (le))",
+          "legendFormat": "P95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 1 }] } }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "graphMode": "area", "colorMode": "background" }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Heap 사용률",
+      "description": "Heap 점유율. GC 후에도 80% 이상 유지되면 메모리 릭 또는 Heap 부족 → 서비스 재시작 또는 Heap 증설 필요.",
+      "gridPos": { "h": 4, "w": 3, "x": 12, "y": 1 },
+      "targets": [
+        {
+          "expr": "sum(jvm_memory_used_bytes{application=\"$application\", area=\"heap\"}) / sum(jvm_memory_max_bytes{application=\"$application\", area=\"heap\"}) * 100",
+          "legendFormat": "Heap %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] } }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "graphMode": "area", "colorMode": "background" }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "CPU 사용률",
+      "description": "JVM 프로세스 CPU 사용률. 0.8 이상 지속 시 CPU 바운드 병목 — 응답 지연과 함께 발생. 수평 확장 고려.",
+      "gridPos": { "h": 4, "w": 3, "x": 15, "y": 1 },
+      "targets": [
+        {
+          "expr": "process_cpu_usage{application=\"$application\"}",
+          "legendFormat": "CPU"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit", "min": 0, "max": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.7 }, { "color": "red", "value": 0.85 }] } }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "graphMode": "area", "colorMode": "background" }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "활성 DB 커넥션",
+      "description": "Hikari 활성 커넥션 수. 풀 최대값에 근접하면 DB 커넥션 대기 → 응답시간 급증. 최대 커넥션 수 조정 또는 쿼리 최적화 필요.",
+      "gridPos": { "h": 4, "w": 3, "x": 18, "y": 1 },
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active{application=\"$application\"}",
+          "legendFormat": "Active"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 7 }, { "color": "red", "value": 9 }] } }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "graphMode": "area", "colorMode": "background" }
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "라이브 스레드",
+      "description": "JVM 라이브 스레드 수. 부하 증가에 비례해 증가하다 급등 없이 안정되면 정상. 급등하면 스레드 생성 누수 점검.",
+      "gridPos": { "h": 4, "w": 3, "x": 21, "y": 1 },
+      "targets": [
+        {
+          "expr": "jvm_threads_live_threads{application=\"$application\"}",
+          "legendFormat": "Threads"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 150 }, { "color": "red", "value": 200 }] } }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "graphMode": "area", "colorMode": "background" }
+    },
+
+    {
+      "id": 20,
+      "type": "row",
+      "title": "🌐 HTTP 트래픽 상세",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "collapsed": false
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "RPS & 에러율",
+      "description": "RPS와 에러율을 같은 시간축으로 확인. RPS 증가 구간에서 에러율도 함께 오르면 특정 임계 부하에서 포화됨을 의미.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"$application\"}[1m]))",
+          "legendFormat": "RPS"
+        },
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"$application\", status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{application=\"$application\"}[1m])) * 100",
+          "legendFormat": "Error %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Error %" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }, { "id": "custom.axisPlacement", "value": "right" }, { "id": "unit", "value": "percent" }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] } }
+    },
+    {
+      "id": 22,
+      "type": "timeseries",
+      "title": "HTTP 상태 코드 분포",
+      "description": "요청 유형별 분류. 4xx 증가는 클라이언트/인증 문제, 5xx 증가는 서버 내부 오류. 부하 테스트 중 어느 지점에서 5xx가 시작되는지 확인.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"$application\", status=~\"2..\"}[1m]))",
+          "legendFormat": "2xx"
+        },
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"$application\", status=~\"4..\"}[1m]))",
+          "legendFormat": "4xx"
+        },
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"$application\", status=~\"5..\"}[1m]))",
+          "legendFormat": "5xx"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "2xx" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "4xx" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "5xx" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 23,
+      "type": "timeseries",
+      "title": "응답시간 P50 / P95 / P99",
+      "description": "P50≈일반 사용자 경험, P99≈최악 케이스. 부하 테스트 목표: P95<500ms. P50과 P99 격차가 3배 이상이면 간헐적 긴 꼬리 존재.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{application=\"$application\"}[1m])) by (le))",
+          "legendFormat": "P50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"$application\"}[1m])) by (le))",
+          "legendFormat": "P95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{application=\"$application\"}[1m])) by (le))",
+          "legendFormat": "P99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "P99" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "P95" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "P50" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] } }
+    },
+    {
+      "id": 24,
+      "type": "timeseries",
+      "title": "URI별 응답시간 P95",
+      "description": "엔드포인트별 P95 응답시간. 특정 URI만 느리면 해당 로직(DB 쿼리, 외부 API 호출) 집중 점검.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"$application\"}[1m])) by (uri, le))",
+          "legendFormat": "{{uri}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+
+    {
+      "id": 30,
+      "type": "row",
+      "title": "☕ JVM 상세",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "collapsed": false
+    },
+    {
+      "id": 31,
+      "type": "timeseries",
+      "title": "Heap 메모리 (Used / Committed / Max)",
+      "description": "Used≈실제 점유, Committed≈OS에 예약된 메모리, Max≈최대 허용. Used가 Max 근접 시 OOM 임박 → GC 로그 및 Heap Dump 분석 필요.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 23 },
+      "targets": [
+        {
+          "expr": "sum(jvm_memory_used_bytes{application=\"$application\", area=\"heap\"})",
+          "legendFormat": "Used"
+        },
+        {
+          "expr": "sum(jvm_memory_committed_bytes{application=\"$application\", area=\"heap\"})",
+          "legendFormat": "Committed"
+        },
+        {
+          "expr": "sum(jvm_memory_max_bytes{application=\"$application\", area=\"heap\"})",
+          "legendFormat": "Max"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "custom": { "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Max" }, "properties": [{ "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] } }
+    },
+    {
+      "id": 32,
+      "type": "timeseries",
+      "title": "Non-Heap 메모리 (Metaspace 등)",
+      "description": "Metaspace(클래스 메타데이터)가 지속 증가하면 클래스 누수(리플렉션 과다, ClassLoader 문제). -XX:MaxMetaspaceSize 설정 확인.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 23 },
+      "targets": [
+        {
+          "expr": "sum(jvm_memory_used_bytes{application=\"$application\", area=\"nonheap\"})",
+          "legendFormat": "Non-Heap Used"
+        },
+        {
+          "expr": "sum(jvm_memory_committed_bytes{application=\"$application\", area=\"nonheap\"})",
+          "legendFormat": "Non-Heap Committed"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] } }
+    },
+    {
+      "id": 33,
+      "type": "timeseries",
+      "title": "GC 일시정지 시간 & 빈도",
+      "description": "GC 발생 빈도(우축)와 GC 소요 시간(좌축). Minor GC는 자주 짧게, Major GC는 드물게 길게가 정상. Major GC 빈도 증가는 Heap 증설 신호.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+      "targets": [
+        {
+          "expr": "sum(rate(jvm_gc_pause_seconds_sum{application=\"$application\"}[1m])) by (action)",
+          "legendFormat": "GC 시간 — {{action}}"
+        },
+        {
+          "expr": "sum(rate(jvm_gc_pause_seconds_count{application=\"$application\"}[1m])) by (action)",
+          "legendFormat": "GC 횟수 — {{action}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 34,
+      "type": "timeseries",
+      "title": "스레드 상태 (Live / Daemon / Peak)",
+      "description": "Live=현재 전체 스레드, Daemon=백그라운드 스레드, Peak=최고치. Live와 Peak 간격이 좁아지면 스레드 상한 임박.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
+      "targets": [
+        {
+          "expr": "jvm_threads_live_threads{application=\"$application\"}",
+          "legendFormat": "Live"
+        },
+        {
+          "expr": "jvm_threads_daemon_threads{application=\"$application\"}",
+          "legendFormat": "Daemon"
+        },
+        {
+          "expr": "jvm_threads_peak_threads{application=\"$application\"}",
+          "legendFormat": "Peak"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] } }
+    },
+    {
+      "id": 35,
+      "type": "timeseries",
+      "title": "CPU 사용률 (Process / System)",
+      "description": "Process CPU = JVM 프로세스, System CPU = 전체 시스템. Process > System은 이상 상태. 둘 다 높으면 물리 CPU 포화.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 39 },
+      "targets": [
+        {
+          "expr": "process_cpu_usage{application=\"$application\"}",
+          "legendFormat": "Process CPU"
+        },
+        {
+          "expr": "system_cpu_usage{application=\"$application\"}",
+          "legendFormat": "System CPU"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit", "min": 0, "max": 1, "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] } }
+    },
+    {
+      "id": 36,
+      "type": "timeseries",
+      "title": "클래스 로딩 현황",
+      "description": "Loaded 클래스 수가 지속 증가하면 ClassLoader 누수 의심. JRebel/동적 클래스 로딩 환경에서 주로 발생.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 39 },
+      "targets": [
+        {
+          "expr": "jvm_classes_loaded_classes{application=\"$application\"}",
+          "legendFormat": "Loaded"
+        },
+        {
+          "expr": "jvm_classes_unloaded_classes_total{application=\"$application\"}",
+          "legendFormat": "Unloaded (누적)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"] } }
+    },
+
+    {
+      "id": 40,
+      "type": "row",
+      "title": "🗄 DB 커넥션 풀 (Hikari)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 47 },
+      "collapsed": false
+    },
+    {
+      "id": 41,
+      "type": "timeseries",
+      "title": "Hikari 커넥션 상태",
+      "description": "Active=사용 중, Idle=대기 중, Pending=커넥션 대기 요청. Pending>0 이면 풀 고갈 → 응답시간 급증. max-pool-size 증설 또는 쿼리 최적화 필요.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 48 },
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active{application=\"$application\"}",
+          "legendFormat": "Active"
+        },
+        {
+          "expr": "hikaricp_connections_idle{application=\"$application\"}",
+          "legendFormat": "Idle"
+        },
+        {
+          "expr": "hikaricp_connections_pending{application=\"$application\"}",
+          "legendFormat": "Pending (대기)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Pending (대기)" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] } }
+    },
+    {
+      "id": 42,
+      "type": "timeseries",
+      "title": "Hikari 커넥션 획득 시간",
+      "description": "커넥션 획득 대기 시간. 평균 수십ms가 정상. 수백ms 이상이면 풀 고갈 또는 DB 응답 지연 확인.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 48 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(hikaricp_connections_acquire_seconds_bucket{application=\"$application\"}[1m])) by (le))",
+          "legendFormat": "Acquire P95"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(hikaricp_connections_acquire_seconds_bucket{application=\"$application\"}[1m])) by (le))",
+          "legendFormat": "Acquire P50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+
+    {
+      "id": 50,
+      "type": "row",
+      "title": "🔄 Circuit Breaker",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 56 },
+      "collapsed": false
+    },
+    {
+      "id": 51,
+      "type": "timeseries",
+      "title": "Circuit Breaker 상태",
+      "description": "0=CLOSED(정상), 1=OPEN(차단 중), 2=HALF_OPEN(복구 시도). OPEN 상태에서는 요청이 즉시 fallback으로 처리됨. 원인 서비스(DB, 외부 API) 점검.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 57 },
+      "targets": [
+        {
+          "expr": "resilience4j_circuitbreaker_state{application=\"$application\"}",
+          "legendFormat": "{{name}} — {{state}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "CLOSED", "color": "green" }, "1": { "text": "OPEN", "color": "red" }, "2": { "text": "HALF_OPEN", "color": "yellow" } } }
+          ]
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull"] } }
+    },
+    {
+      "id": 52,
+      "type": "timeseries",
+      "title": "Circuit Breaker 호출 (성공 / 실패 / 차단)",
+      "description": "successful=정상 처리, failed=예외, not_permitted=OPEN으로 인한 차단. not_permitted 증가 시 downstream 장애 확인.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 57 },
+      "targets": [
+        {
+          "expr": "sum(rate(resilience4j_circuitbreaker_calls_seconds_count{application=\"$application\", kind=\"successful\"}[1m])) by (name)",
+          "legendFormat": "성공 — {{name}}"
+        },
+        {
+          "expr": "sum(rate(resilience4j_circuitbreaker_calls_seconds_count{application=\"$application\", kind=\"failed\"}[1m])) by (name)",
+          "legendFormat": "실패 — {{name}}"
+        },
+        {
+          "expr": "sum(rate(resilience4j_circuitbreaker_not_permitted_calls_total{application=\"$application\"}[1m])) by (name)",
+          "legendFormat": "차단 — {{name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+
+    {
+      "id": 60,
+      "type": "row",
+      "title": "📊 커스텀 도메인 메트릭",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 65 },
+      "collapsed": false
+    },
+    {
+      "id": 61,
+      "type": "timeseries",
+      "title": "도메인 API별 요청 처리율 (성공/실패)",
+      "description": "@Monitored로 수집된 서비스 레이어 호출. API별 실패율 확인. fail 급증하는 API가 장애 진원지.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 66 },
+      "targets": [
+        {
+          "expr": "sum(rate(ft_domain_requests_total{application=\"$application\", result=\"success\"}[1m])) by (api)",
+          "legendFormat": "✓ {{api}}"
+        },
+        {
+          "expr": "sum(rate(ft_domain_requests_total{application=\"$application\", result=\"fail\"}[1m])) by (api)",
+          "legendFormat": "✗ {{api}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 62,
+      "type": "timeseries",
+      "title": "도메인 API별 응답시간 P95",
+      "description": "API별 P95 응답시간. 특정 API만 느리면 해당 메서드의 DB 쿼리·비즈니스 로직 집중 점검.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 66 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(ft_domain_request_duration_seconds_bucket{application=\"$application\"}[1m])) by (api, le))",
+          "legendFormat": "P95 — {{api}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+
+    {
+      "id": 70,
+      "type": "row",
+      "title": "📨 Kafka & 외부 API 메트릭",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 74 },
+      "collapsed": false
+    },
+    {
+      "id": 71,
+      "type": "timeseries",
+      "title": "Kafka 이벤트 처리 (이 서비스)",
+      "description": "publish=발행 성공/실패, consume=소비 성공/실패. consume fail은 이벤트 처리 예외. 재시도 또는 DLQ 확인 필요.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 75 },
+      "targets": [
+        {
+          "expr": "sum(rate(ft_kafka_events_total{application=\"$application\", result=\"success\"}[1m])) by (topic, action)",
+          "legendFormat": "✓ {{topic}} / {{action}}"
+        },
+        {
+          "expr": "sum(rate(ft_kafka_events_total{application=\"$application\", result=\"fail\"}[1m])) by (topic, action, error_type)",
+          "legendFormat": "✗ {{topic}} / {{action}} / {{error_type}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 72,
+      "type": "timeseries",
+      "title": "외부 API 호출 (FCM / SMTP / Kakao)",
+      "description": "ExternalApiMetricHelper로 수집. fail 발생 시 error_type으로 원인 파악. 외부 서비스 장애 vs 내부 로직 오류 구분 가능.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 75 },
+      "targets": [
+        {
+          "expr": "sum(rate(ft_external_api_requests_total{application=\"$application\", result=\"success\"}[1m])) by (system, operation)",
+          "legendFormat": "✓ {{system}} / {{operation}}"
+        },
+        {
+          "expr": "sum(rate(ft_external_api_requests_total{application=\"$application\", result=\"fail\"}[1m])) by (system, operation, error_type)",
+          "legendFormat": "✗ {{system}} / {{operation}} / {{error_type}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 73,
+      "type": "timeseries",
+      "title": "외부 API 응답시간 P95",
+      "description": "외부 API별 P95 응답시간. 특정 외부 시스템이 느리면 Circuit Breaker 설정 또는 타임아웃 조정 검토.",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 83 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(ft_external_api_duration_seconds_bucket{application=\"$application\"}[1m])) by (system, operation, le))",
+          "legendFormat": "P95 — {{system}} / {{operation}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "lineWidth": 2 } }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    }
+  ],
+  "annotations": { "list": [] }
+}
