@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "types": ["vite/client"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Path aliases — packages/ 참조 (npm workspaces 적용 전 상대경로 직접 참조) */
+    "baseUrl": ".",
+    "paths": {
+      "@fintracking/types": ["../../packages/types/src"],
+      "@fintracking/types/*": ["../../packages/types/src/*"],
+      "@fintracking/api": ["../../packages/api/src"],
+      "@fintracking/api/*": ["../../packages/api/src/*"],
+      "@fintracking/services": ["../../packages/services/src"],
+      "@fintracking/services/*": ["../../packages/services/src/*"],
+      "@fintracking/ui": ["../../packages/ui/src"],
+      "@fintracking/ui/*": ["../../packages/ui/src/*"],
+      "@fintracking/utils": ["../../packages/utils/src"],
+      "@fintracking/utils/*": ["../../packages/utils/src/*"]
+    },
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"]
+}
