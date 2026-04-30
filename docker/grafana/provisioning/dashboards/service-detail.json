@@ -13,7 +13,10 @@
         "label": "서비스",
         "type": "query",
         "datasource": { "type": "prometheus", "uid": "prometheus" },
-        "query": "label_values(up{job=\"spring-microservices\"}, application)",
+        "query": {
+          "query": "label_values(up{job=\"spring-microservices\"}, application)",
+          "refId": "StandardVariableQuery"
+        },
         "refresh": 2,
         "sort": 1,
         "multi": false,
@@ -39,7 +42,7 @@
       "gridPos": { "h": 4, "w": 3, "x": 0, "y": 1 },
       "targets": [
         {
-          "expr": "up{job=\"spring-microservices\", application=\"$application\"}",
+          "expr": "max(up{job=\"spring-microservices\", application=\"$application\"})",
           "legendFormat": "Status"
         }
       ],

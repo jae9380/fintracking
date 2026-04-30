@@ -17,10 +17,11 @@ scrape_configs:
       - server: http://host.docker.internal:8761/eureka
         refresh_interval: 15s
     relabel_configs:
-      # 서비스가 host에서 실행되므로 hostname을 host.docker.internal로 교체
-      - source_labels: [ __meta_eureka_app_instance_port_number ]
-        regex: '(.*)'
-        replacement: 'host.docker.internal:$1'
+      # Eureka SD가 설정한 __address__(hostname:port)에서 포트만 추출해
+      # host.docker.internal:{port} 로 교체 (서비스가 host에서 실행되므로)
+      - source_labels: [ __address__ ]
+        regex: '([^:]+):(.*)'
+        replacement: 'host.docker.internal:$2'
         target_label: __address__
       # 메트릭 경로
       - target_label: __metrics_path__
