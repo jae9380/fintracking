@@ -16,6 +16,7 @@
     "jsx": "react-jsx",
 
     /* Path aliases — packages/ 참조 (npm workspaces 적용 전 상대경로 직접 참조) */
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@fintracking/types": ["../../packages/types/src"],
