@@ -12,12 +12,8 @@ function isAuthenticated() {
   return !!localStorage.getItem('accessToken')
 }
 
-// DUMMY: 개발 단계에서 인증 우회 — 백엔드 연동 시 아래 주석 해제하고 그 다음 줄 삭제
-// function ProtectedRoute({ children }: { children: React.ReactNode }) {
-//   return isAuthenticated() ? <>{children}</> : <Navigate to="/login" replace />
-// }
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return isAuthenticated() ? <>{children}</> : <Navigate to="/login" replace />
 }
 
 export default function App() {

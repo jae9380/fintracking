@@ -7,7 +7,7 @@ interface Transaction {
   id: number; type: 'INCOME' | 'EXPENSE' | 'TRANSFER'
   amount: number; description: string; categoryId: number; transactionDate: string
 }
-interface Budget { id: number; categoryId: number; amount: number; spentAmount: number; yearMonth: string }
+interface Budget { id: number; categoryId: number; amount: number; spent: number; yearMonth: string }
 
 function fmtAmount(n: number) {
   return n.toLocaleString('ko-KR') + '원'
@@ -115,13 +115,13 @@ export default function DashboardPage() {
                 <div className="text-sm">등록된 예산이 없습니다</div>
               </div>
             ) : budgets.slice(0, 4).map(b => {
-              const pct = Math.min(Math.round((b.spentAmount / b.amount) * 100), 100)
+              const pct = Math.min(Math.round((b.spent / b.amount) * 100), 100)
               const barColor = pct >= 100 ? 'bg-red-400' : pct >= 80 ? 'bg-amber-400' : 'bg-indigo-400'
               return (
                 <div key={b.id} className="mb-4 last:mb-0">
                   <div className="flex justify-between text-[13px] mb-1.5">
                     <span className="font-medium text-slate-700">카테고리 {b.categoryId}</span>
-                    <span className="text-slate-400">{pct}% · {fmtAmount(b.spentAmount)} / {fmtAmount(b.amount)}</span>
+                    <span className="text-slate-400">{pct}% · {fmtAmount(b.spent)} / {fmtAmount(b.amount)}</span>
                   </div>
                   <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full transition-[width] duration-500 ${barColor}`} style={{ width: `${pct}%` }} />

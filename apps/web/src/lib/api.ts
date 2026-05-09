@@ -1,7 +1,6 @@
-import { handleMock } from './mock.ts'
+// import { handleMock } from './mock.ts'
 
-// DUMMY: 백엔드 연동 시 false로 변경
-const MOCK_MODE = true
+const MOCK_MODE = false
 
 const BASE_URL = ''
 

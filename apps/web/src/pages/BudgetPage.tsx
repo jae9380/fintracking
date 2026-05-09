@@ -3,7 +3,7 @@ import { apiFetch } from '../lib/api.ts'
 
 interface Budget {
   id: number; categoryId: number; categoryName?: string
-  amount: number; spentAmount: number; yearMonth: string
+  amount: number; spent: number; yearMonth: string
 }
 interface Category { id: number; name: string }
 
@@ -48,7 +48,7 @@ export default function BudgetPage() {
 
   const catMap = Object.fromEntries(categories.map(c => [c.id, c.name]))
   const totalBudget = budgets.reduce((s, b) => s + b.amount, 0)
-  const totalSpent  = budgets.reduce((s, b) => s + b.spentAmount, 0)
+  const totalSpent  = budgets.reduce((s, b) => s + b.spent, 0)
   const overallPct  = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0
 
   async function handleCreate(e: React.FormEvent) {
@@ -138,8 +138,8 @@ export default function BudgetPage() {
       ) : (
         <div className="grid grid-cols-2 gap-4">
           {budgets.map(b => {
-            const pct       = b.amount > 0 ? Math.min(Math.round((b.spentAmount / b.amount) * 100), 100) : 0
-            const remaining = b.amount - b.spentAmount
+            const pct       = b.amount > 0 ? Math.min(Math.round((b.spent / b.amount) * 100), 100) : 0
+            const remaining = b.amount - b.spent
             return (
               <div key={b.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 px-6">
                 <div className="flex justify-between items-start mb-3">
@@ -169,7 +169,7 @@ export default function BudgetPage() {
                 </div>
 
                 <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-slate-400">{fmtAmount(b.spentAmount)} 사용</span>
+                  <span className="text-slate-400">{fmtAmount(b.spent)} 사용</span>
                   <span className={`font-medium ${progressTextColor(pct)}`}>{pct}%</span>
                 </div>
                 <div className="h-2 bg-slate-200 rounded-full overflow-hidden mb-2.5">
