@@ -7,6 +7,7 @@ import AccountsPage from './pages/AccountsPage.tsx'
 import TransactionsPage from './pages/TransactionsPage.tsx'
 import BudgetPage from './pages/BudgetPage.tsx'
 import NotificationsPage from './pages/NotificationsPage.tsx'
+import ErrorPage from './pages/ErrorPage.tsx'
 
 function isAuthenticated() {
   return !!localStorage.getItem('accessToken')
@@ -33,7 +34,7 @@ export default function App() {
                   <Route path="transactions"   element={<TransactionsPage />} />
                   <Route path="budget"         element={<BudgetPage />} />
                   <Route path="notifications"  element={<NotificationsPage />} />
-                  <Route path="*"              element={<Navigate to="/" replace />} />
+                  <Route path="*"              element={<ErrorPage />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>

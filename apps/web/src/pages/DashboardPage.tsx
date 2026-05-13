@@ -10,6 +10,7 @@ interface Transaction {
 interface Budget { id: number; categoryId: number; amount: number; spent: number; yearMonth: string }
 
 function fmtAmount(n: number) {
+  if (n < 0) return '-' + Math.abs(n).toLocaleString('ko-KR') + '원'
   return n.toLocaleString('ko-KR') + '원'
 }
 
@@ -47,7 +48,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 px-6 border-t-[3px] border-t-indigo-400">
           <div className="text-xs text-slate-400 mb-1.5">총 자산</div>
-          <div className="text-2xl font-bold text-slate-800">{fmtAmount(totalBalance)}</div>
+          <div className={`text-2xl font-bold ${totalBalance < 0 ? 'text-red-500' : 'text-slate-800'}`}>{fmtAmount(totalBalance)}</div>
           <div className="text-xs text-slate-400 mt-1">계좌 {accounts.length}개 합산</div>
         </div>
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 px-6 border-t-[3px] border-t-emerald-400">
@@ -158,7 +159,7 @@ export default function DashboardPage() {
                   <div className="text-[11px] text-slate-400">{a.accountType}</div>
                 </div>
               </div>
-              <div className="text-xl font-bold text-slate-800">{fmtAmount(a.balance)}</div>
+              <div className={`text-xl font-bold ${a.balance < 0 ? 'text-red-500' : 'text-slate-800'}`}>{fmtAmount(a.balance)}</div>
             </div>
           ))}
           {accounts.length === 0 && (

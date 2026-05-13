@@ -32,6 +32,7 @@ export default function TransactionsPage() {
   const [filterType, setFilterType]       = useState('')
   const [showModal, setShowModal]         = useState(false)
   const [showCatModal, setShowCatModal]   = useState(false)
+  const [selectedIds, setSelectedIds]     = useState<Set<number>>(new Set())
   const [form, setForm] = useState({
     accountId: '', toAccountId: '', categoryId: '',
     type: 'EXPENSE', amount: '', description: '', transactionDate: '',
@@ -50,11 +51,31 @@ export default function TransactionsPage() {
     setTransactions(td.data ?? [])
     setAccounts(ad.data ?? [])
     setCategories(cd.data ?? [])
+    setSelectedIds(new Set())
   }
 
   useEffect(() => { load() }, [filterAccount])
 
   const filtered = filterType ? transactions.filter(t => t.type === filterType) : transactions
+
+  const allSelected = filtered.length > 0 && selectedIds.size === filtered.length
+  const someSelected = selectedIds.size > 0 && !allSelected
+
+  function toggleSelect(id: number) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filtered.map(t => t.id)))
+    }
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -81,6 +102,16 @@ export default function TransactionsPage() {
   async function handleDelete(id: number) {
     if (!confirm('거래를 삭제하시겠습니까?')) return
     await apiFetch(`/transaction-service/api/v1/transactions/${id}`, { method: 'DELETE' })
+    load()
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return
+    if (!confirm(`선택한 ${selectedIds.size}건의 거래를 삭제하시겠습니까?`)) return
+    await apiFetch('/transaction-service/api/v1/transactions/bulk', {
+      method: 'DELETE',
+      body: { ids: Array.from(selectedIds) },
+    })
     load()
   }
 
@@ -114,6 +145,14 @@ export default function TransactionsPage() {
           <div className="text-xs text-slate-400 mt-0.5">총 {filtered.length}건</div>
         </div>
         <div className="flex gap-2.5">
+          {selectedIds.size > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors"
+            >
+              선택 삭제 ({selectedIds.size})
+            </button>
+          )}
           <button
             onClick={() => setShowCatModal(true)}
             className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-500 border border-slate-200 hover:bg-slate-50 transition-colors"
@@ -131,11 +170,11 @@ export default function TransactionsPage() {
 
       {/* Filters */}
       <div className="flex gap-2.5 items-center flex-wrap mb-4">
-        <select className="fin-select" style={{ width: 160 }} value={filterAccount} onChange={e => setFilterAccount(e.target.value)}>
+        <select className="fin-select" style={{ width: 160 }} value={filterAccount} onChange={e => { setFilterAccount(e.target.value); setSelectedIds(new Set()) }}>
           <option value="">전체 계좌</option>
           {accounts.map(a => <option key={a.id} value={a.id}>{a.accountName}</option>)}
         </select>
-        <select className="fin-select" style={{ width: 120 }} value={filterType} onChange={e => setFilterType(e.target.value)}>
+        <select className="fin-select" style={{ width: 120 }} value={filterType} onChange={e => { setFilterType(e.target.value); setSelectedIds(new Set()) }}>
           <option value="">전체 유형</option>
           <option value="INCOME">수입</option>
           <option value="EXPENSE">지출</option>
@@ -144,13 +183,38 @@ export default function TransactionsPage() {
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
+        {/* 전체 선택 헤더 */}
+        {filtered.length > 0 && (
+          <div className="flex items-center px-6 py-3 border-b border-slate-100 gap-3">
+            <input
+              type="checkbox"
+              className="w-4 h-4 rounded accent-indigo-500 cursor-pointer"
+              checked={allSelected}
+              ref={el => { if (el) el.indeterminate = someSelected }}
+              onChange={toggleAll}
+            />
+            <span className="text-xs text-slate-400">
+              {selectedIds.size > 0 ? `${selectedIds.size}건 선택됨` : '전체 선택'}
+            </span>
+          </div>
+        )}
+
         {filtered.length === 0 ? (
           <div className="text-center py-12 px-6 text-slate-400">
             <div className="text-4xl mb-3">💳</div>
             <div className="text-sm">거래 내역이 없습니다</div>
           </div>
         ) : filtered.map(t => (
-          <div key={t.id} className="flex items-center px-6 py-3.5 border-b border-slate-100 gap-3 last:border-b-0">
+          <div
+            key={t.id}
+            className={`flex items-center px-6 py-3.5 border-b border-slate-100 gap-3 last:border-b-0 transition-colors ${selectedIds.has(t.id) ? 'bg-indigo-50/50' : ''}`}
+          >
+            <input
+              type="checkbox"
+              className="w-4 h-4 rounded accent-indigo-500 cursor-pointer shrink-0"
+              checked={selectedIds.has(t.id)}
+              onChange={() => toggleSelect(t.id)}
+            />
             <div className={`w-[38px] h-[38px] rounded-[10px] shrink-0 ${TX_BG[t.type]} flex items-center justify-center text-[17px]`}>
               {TX_ICON[t.type]}
             </div>
@@ -257,7 +321,7 @@ export default function TransactionsPage() {
           </div>
         </div>
       )}
-      {/* Category management modal */}
+
       {showCatModal && (
         <div
           className="fixed inset-0 bg-slate-900/35 flex items-center justify-center z-[999] backdrop-blur-sm"
@@ -266,7 +330,6 @@ export default function TransactionsPage() {
           <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-[480px]" onClick={e => e.stopPropagation()}>
             <div className="text-[17px] font-bold text-slate-800 mb-5">카테고리 관리</div>
 
-            {/* 기존 카테고리 목록 */}
             <div className="mb-5 max-h-48 overflow-y-auto">
               {categories.length === 0 ? (
                 <div className="text-sm text-slate-400 text-center py-4">등록된 카테고리가 없습니다</div>
@@ -290,7 +353,6 @@ export default function TransactionsPage() {
               ))}
             </div>
 
-            {/* 새 카테고리 추가 */}
             <div className="border-t border-slate-100 pt-5">
               <div className="text-[13px] font-semibold text-slate-600 mb-3">새 카테고리 추가</div>
               <form onSubmit={handleCreateCategory}>

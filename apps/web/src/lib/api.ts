@@ -4,50 +4,84 @@ const MOCK_MODE = false
 
 const BASE_URL = ''
 
+// 동시에 여러 401이 발생할 때 reissue를 한 번만 실행하도록 직렬화
+let reissuePromise: Promise<string | null> | null = null
+
+function forceLogout() {
+  localStorage.removeItem('accessToken')
+  localStorage.removeItem('refreshToken')
+  window.location.href = '/login'
+}
+
+async function reissueToken(): Promise<string | null> {
+  if (reissuePromise) return reissuePromise
+
+  reissuePromise = (async () => {
+    const refreshToken = localStorage.getItem('refreshToken')
+    if (!refreshToken) return null
+    try {
+      const res = await fetch(`${BASE_URL}/auth-service/api/v1/auth/reissue`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${refreshToken}`, 'Content-Type': 'application/json' },
+      })
+      if (!res.ok) return null
+      const data = await res.json()
+      const newToken: string | null = data?.data ?? null
+      if (newToken) localStorage.setItem('accessToken', newToken)
+      return newToken
+    } catch {
+      return null
+    } finally {
+      reissuePromise = null
+    }
+  })()
+
+  return reissuePromise
+}
+
 export async function apiFetch(
   path: string,
   options: { method?: string; body?: unknown } = {},
 ) {
-  // DUMMY: 목업 모드에서는 실제 API 호출 대신 더미 핸들러 사용
-  if (MOCK_MODE) {
-    await new Promise(r => setTimeout(r, 80)) // 실제 API 느낌을 위한 딜레이
-    return handleMock(path, options.method ?? 'GET', options.body)
-  }
-
   const token = localStorage.getItem('accessToken')
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: options.method ?? 'GET',
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  })
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      method: options.method ?? 'GET',
+      headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    })
+  } catch {
+    throw new Error('Network error')
+  }
 
-  // 401: 토큰 만료 → reissue 시도
+  // 401: 토큰 만료 → reissue 후 재시도 (동시 요청은 동일한 reissue 결과 공유)
   if (res.status === 401) {
-    const refreshToken = localStorage.getItem('refreshToken')
-    if (refreshToken) {
-      const reissued = await fetch(`${BASE_URL}/auth-service/api/v1/auth/reissue`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${refreshToken}` },
-      })
-      if (reissued.ok) {
-        const data = await reissued.json()
-        localStorage.setItem('accessToken', data.data)
-        headers['Authorization'] = `Bearer ${data.data}`
+    const newToken = await reissueToken()
+    if (newToken) {
+      headers['Authorization'] = `Bearer ${newToken}`
+      try {
         const retry = await fetch(`${BASE_URL}${path}`, {
           method: options.method ?? 'GET',
           headers,
           body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
         })
         return retry.json()
+      } catch {
+        throw new Error('Network error on retry')
       }
     }
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    window.location.href = '/login'
+    forceLogout()
     throw new Error('Unauthorized')
+  }
+
+  // 403: 권한 없음 → 로그아웃
+  if (res.status === 403) {
+    forceLogout()
+    throw new Error('Forbidden')
   }
 
   return res.json()

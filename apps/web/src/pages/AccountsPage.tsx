@@ -11,7 +11,10 @@ const TYPE_ICONS: Record<string, string> = {
   CHECKING: '💳', SAVINGS: '🏦', INVESTMENT: '📈', CARD: '💰',
 }
 
-function fmtAmount(n: number) { return n.toLocaleString('ko-KR') + '원' }
+function fmtAmount(n: number) {
+  if (n < 0) return '-' + Math.abs(n).toLocaleString('ko-KR') + '원'
+  return n.toLocaleString('ko-KR') + '원'
+}
 function maskAccountNumber(s: string) { return s.length > 4 ? '****-****-' + s.slice(-4) : s }
 
 export default function AccountsPage() {
@@ -90,7 +93,9 @@ export default function AccountsPage() {
 
               <div className="h-px bg-slate-100 mb-3" />
               <div className="text-[11px] text-slate-400 mb-0.5">잔액</div>
-              <div className="text-[22px] font-bold text-slate-800">{fmtAmount(a.balance)}</div>
+              <div className={`text-[22px] font-bold ${a.balance < 0 ? 'text-red-500' : 'text-slate-800'}`}>
+                {fmtAmount(a.balance)}
+              </div>
             </div>
           ))}
         </div>
