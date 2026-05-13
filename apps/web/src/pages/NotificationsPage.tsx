@@ -23,6 +23,7 @@ export default function NotificationsPage() {
   const [filterRead, setFilterRead] = useState<string>('')
   const [page, setPage]             = useState(0)
   const [loading, setLoading]       = useState(false)
+  const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [settingsForm, setSettingsForm] = useState({ emailEnabled: true, email: '', fcmEnabled: false })
   const [settingsLoading, setSettingsLoading] = useState(false)
@@ -43,6 +44,18 @@ export default function NotificationsPage() {
   async function handleMarkRead(id: number) {
     await apiFetch(`/notification-service/api/v1/notifications/${id}/read`, { method: 'PATCH' })
     load(page)
+  }
+
+  async function openDetail(n: Notification) {
+    setSelectedNotif(n)
+    if (!n.read) {
+      await apiFetch(`/notification-service/api/v1/notifications/${n.id}/read`, { method: 'PATCH' })
+      setData(prev => ({
+        ...prev,
+        content: prev.content.map(item => item.id === n.id ? { ...item, read: true } : item),
+      }))
+      setSelectedNotif({ ...n, read: true })
+    }
   }
 
   async function handleMarkAllRead() {
@@ -118,10 +131,10 @@ export default function NotificationsPage() {
         ) : data.content.map(n => (
           <div
             key={n.id}
-            className={`flex items-center px-6 py-3.5 border-b border-slate-100 gap-3 last:border-b-0 ${
-              !n.read ? 'bg-indigo-50/40 cursor-pointer' : ''
+            className={`flex items-center px-6 py-3.5 border-b border-slate-100 gap-3 last:border-b-0 cursor-pointer hover:bg-slate-50/60 transition-colors ${
+              !n.read ? 'bg-indigo-50/40' : ''
             }`}
-            onClick={() => !n.read && handleMarkRead(n.id)}
+            onClick={() => openDetail(n)}
           >
             <div className={`w-10 h-10 rounded-xl shrink-0 ${iconBg(n.type)} flex items-center justify-center text-[18px]`}>
               {TYPE_ICONS[n.type] ?? '🔔'}
@@ -148,6 +161,44 @@ export default function NotificationsPage() {
           </div>
         ))}
       </div>
+
+      {/* Notification detail modal */}
+      {selectedNotif && (
+        <div
+          className="fixed inset-0 bg-slate-900/35 flex items-center justify-center z-[999] backdrop-blur-sm"
+          onClick={() => setSelectedNotif(null)}
+        >
+          <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-[480px]" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start gap-4 mb-5">
+              <div className={`w-14 h-14 rounded-2xl shrink-0 ${iconBg(selectedNotif.type)} flex items-center justify-center text-[28px]`}>
+                {TYPE_ICONS[selectedNotif.type] ?? '🔔'}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[17px] font-bold text-slate-800">{selectedNotif.title}</span>
+                  {!selectedNotif.read ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-600">새 알림</span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-400">읽음</span>
+                  )}
+                </div>
+                <div className="text-[11px] text-slate-300 mt-1">{new Date(selectedNotif.sentAt).toLocaleString('ko-KR')}</div>
+              </div>
+            </div>
+            <div className="bg-slate-50 rounded-xl p-4 text-sm text-slate-700 leading-relaxed mb-6">
+              {selectedNotif.message}
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setSelectedNotif(null)}
+                className="inline-flex items-center px-5 py-2.5 rounded-xl text-sm font-medium bg-indigo-400 text-white hover:bg-indigo-500 transition-colors"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Notification settings modal */}
       {showSettings && (
