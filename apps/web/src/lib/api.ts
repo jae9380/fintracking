@@ -26,8 +26,10 @@ async function reissueToken(): Promise<string | null> {
       })
       if (!res.ok) return null
       const data = await res.json()
-      const newToken: string | null = data?.data ?? null
+      const payload = data?.data
+      const newToken: string | null = payload?.accessToken ?? null
       if (newToken) localStorage.setItem('accessToken', newToken)
+      if (payload?.refreshToken) localStorage.setItem('refreshToken', payload.refreshToken)
       return newToken
     } catch {
       return null
