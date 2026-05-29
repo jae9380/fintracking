@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/layout/Layout.tsx'
 import LoginPage from './pages/LoginPage.tsx'
 import SignupPage from './pages/SignupPage.tsx'
+import KakaoCallbackPage from './pages/KakaoCallbackPage.tsx'
 import DashboardPage from './pages/DashboardPage.tsx'
 import AccountsPage from './pages/AccountsPage.tsx'
 import TransactionsPage from './pages/TransactionsPage.tsx'
@@ -21,8 +22,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login"  element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/login"          element={<LoginPage />} />
+        <Route path="/signup"         element={<SignupPage />} />
+        <Route path="/outh/callback"  element={<KakaoCallbackPage />} />
         <Route
           path="/*"
           element={

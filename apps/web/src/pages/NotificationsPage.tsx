@@ -25,7 +25,8 @@ export default function NotificationsPage() {
   const [loading, setLoading]       = useState(false)
   const [selectedNotif, setSelectedNotif] = useState<Notification | null>(null)
   const [showSettings, setShowSettings] = useState(false)
-  const [settingsForm, setSettingsForm] = useState({ emailEnabled: true, email: '', fcmEnabled: false })
+  const [settingsForm, setSettingsForm] = useState({ emailEnabled: false, email: '', fcmEnabled: false })
+  const [settingsFcmToken, setSettingsFcmToken] = useState<string | null>(null)
   const [settingsLoading, setSettingsLoading] = useState(false)
   const [settingsSaved, setSettingsSaved] = useState(false)
 
@@ -63,6 +64,26 @@ export default function NotificationsPage() {
     load(page)
   }
 
+  async function openSettings() {
+    setSettingsLoading(true)
+    try {
+      const res = await apiFetch('/notification-service/api/v1/notifications/settings')
+      const s = res.data
+      setSettingsForm({
+        fcmEnabled: s?.fcmEnabled ?? false,
+        emailEnabled: s?.emailEnabled ?? false,
+        email: s?.email ?? '',
+      })
+      setSettingsFcmToken(s?.fcmToken ?? null)
+    } catch {
+      setSettingsForm({ fcmEnabled: false, emailEnabled: false, email: '' })
+      setSettingsFcmToken(null)
+    } finally {
+      setSettingsLoading(false)
+    }
+    setShowSettings(true)
+  }
+
   async function handleSaveSettings(e: React.FormEvent) {
     e.preventDefault()
     setSettingsLoading(true)
@@ -73,7 +94,7 @@ export default function NotificationsPage() {
           fcmEnabled: settingsForm.fcmEnabled,
           emailEnabled: settingsForm.emailEnabled,
           email: settingsForm.email,
-          fcmToken: '',
+          fcmToken: settingsFcmToken,
         },
       })
       setSettingsSaved(true)
@@ -102,7 +123,7 @@ export default function NotificationsPage() {
             <option value="true">읽음</option>
           </select>
           <button
-            onClick={() => setShowSettings(true)}
+            onClick={openSettings}
             className="inline-flex items-center px-4 py-2.5 rounded-xl text-sm font-medium text-slate-500 border border-slate-200 hover:bg-slate-50 transition-colors"
           >
             알림 설정
@@ -210,6 +231,21 @@ export default function NotificationsPage() {
             <div className="text-[17px] font-bold text-slate-800 mb-1">알림 설정</div>
             <div className="text-xs text-slate-400 mb-5">알림을 받을 방법을 설정하세요</div>
             <form onSubmit={handleSaveSettings}>
+              {/* 웹 푸시 알림 */}
+              <div className="flex items-center justify-between py-3.5 border-b border-slate-100">
+                <div>
+                  <div className="text-sm font-medium text-slate-800">웹 푸시 알림</div>
+                  <div className="text-xs text-slate-400 mt-0.5">브라우저 푸시 알림으로 실시간 수신</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSettingsForm(f => ({ ...f, fcmEnabled: !f.fcmEnabled }))}
+                  className={`relative w-11 h-6 rounded-full transition-colors ${settingsForm.fcmEnabled ? 'bg-indigo-400' : 'bg-slate-200'}`}
+                >
+                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settingsForm.fcmEnabled ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
+
               {/* 이메일 알림 */}
               <div className="flex items-center justify-between py-3.5 border-b border-slate-100">
                 <div>

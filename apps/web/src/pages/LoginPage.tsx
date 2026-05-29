@@ -29,8 +29,11 @@ export default function LoginPage() {
     }
   }
 
-  async function handleKakaoLogin() {
-    alert('카카오 OAuth2 연동이 필요합니다.')
+  function handleKakaoLogin() {
+    const clientId = import.meta.env.VITE_KAKAO_CLIENT_ID
+    const redirectUri = 'http://localhost:5173/outh/callback'
+    window.location.href =
+      `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`
   }
 
   return (
