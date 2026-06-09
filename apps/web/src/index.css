@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/* ── Base ───────────────────────────────────────────────────── */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { text-decoration: none; color: inherit; }
+
+/* ── Reusable form components ───────────────────────────────── */
+@layer components {
+  .fin-input {
+    @apply w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white outline-none
+           transition-colors focus:border-indigo-400;
+  }
+  .fin-input:disabled {
+    @apply bg-slate-50 text-slate-400 cursor-not-allowed;
+  }
+  .fin-select {
+    @apply w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white outline-none
+           cursor-pointer appearance-none transition-colors focus:border-indigo-400;
+  }
+  .fin-label {
+    @apply block text-[13px] font-medium text-slate-500 mb-1.5;
+  }
+  .fin-group {
+    @apply flex flex-col mb-4;
+  }
+}

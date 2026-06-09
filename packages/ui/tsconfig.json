@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "verbatimModuleSyntax": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@fintracking/types": ["../types/src"],
+      "@fintracking/types/*": ["../types/src/*"],
+      "@fintracking/utils": ["../utils/src"],
+      "@fintracking/utils/*": ["../utils/src/*"]
+    }
+  },
+  "include": ["src"]
+}

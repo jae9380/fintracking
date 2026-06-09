@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "verbatimModuleSyntax": true,
+    "paths": {
+      "@fintracking/types": ["../types/src"],
+      "@fintracking/types/*": ["../types/src/*"],
+      "@fintracking/api": ["../api/src"],
+      "@fintracking/api/*": ["../api/src/*"]
+    }
+  },
+  "include": ["src"]
+}
